@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>罚款记录报告</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* 样式可以根据需要自行调整 */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px; /* 增加间隔 */
+        }
+
+        .grid-item {
+            border: 1px solid #ccc;
+            padding: 20px; /* 增加内边距 */
+            position: relative;
+        }
+
+        .penalty-info {
+            margin-bottom: 20px; /* 增加底部间距 */
+        }
+
+        .payment-button, .edit-button {
+            display: block; /* 修改为块级元素 */
+            margin-top: 10px; /* 上方间距 */
+            padding: 10px 20px; /* 按钮内边距 */
+            border: none;
+            cursor: pointer;
+            float: right; /* 向右浮动 */
+        }
+
+        .paid {
+            background-color: green;
+            color: white;
+        }
+
+        .delete-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+        }
+
+        .edit-button {
+            position: absolute;
+            bottom: 20px; /* 底部对齐 */
+            right: 140px; /* 调整按钮位置 */
+        }
+
+        .edit-icon {
+            display: none; /* 隐藏编辑图标 */
+        }
+
+        /* 添加按钮样式 */
+        .report-button {
+            display: block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Hokage Penalty Fine Report</h1>
+    </header>
+    
+    <main>
+        <!-- 搜索功能 -->
+        <section id="search-section">
+            <h2>Search</h2>
+            <input type="text" id="search-name" placeholder="输入姓名">
+            <button onclick="searchByName()">搜索</button>
+        </section>
+
+        <!-- 记录列表 -->
+        <section id="penalty-section">
+            <h2>Hokage Penalty Record</h2>
+            <div class="grid-container" id="grid-container"></div>
+        </section>
+
+        <!-- 添加按钮 -->
+        <button class="add-button" onclick="showAddForm()">ADD</button>
+
+        <!-- 保存按钮 -->
+        <button id="save-button" onclick="saveRecords()">SAVE</button>
+    </main>
+
+    <!-- 添加记录的弹出窗口 -->
+    <div id="add-form" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddForm()">&times;</span>
+            <h2>Add Record</h2>
+            <input type="text" id="add-name" placeholder="Name">
+            <input type="text" id="add-reason" placeholder="Reason">
+            <input type="text" id="add-amount" placeholder="Amount">
+            <input type="text" id="add-invoice-number" placeholder="Invoice Number">
+            <button onclick="addRecord()">SAVE</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Your Company</p>
+        <!-- 报告按钮 -->
+        <a href="record.html" class="short-report-button">Report</a>
+    </footer>
+    </footer>
+
+    <script>
+        function searchByName() {
+            var searchName = document.getElementById('search-name').value;
+            var penalties = JSON.parse(localStorage.getItem('reportData')) || [];
+            var matchedPenalties = penalties.filter(function(penalty) {
+                return penalty.name.toLowerCase().includes(searchName.toLowerCase());
+            });
+            displayPenalties(matchedPenalties);
+        }
+
+        function displayPenalties(penalties) {
+            var gridContainer = document.getElementById('grid-container');
+            gridContainer.innerHTML = '';
+            penalties.forEach(function(penalty, index) {
+                var gridItem = document.createElement('div');
+                gridItem.classList.add('grid-item');
+                var unpaidButton = '<button class="payment-button" onclick="togglePaymentStatus(this, ' + index + ')">UNPAID</button>';
+                if (penalty.paid) {
+                    unpaidButton = '<button class="payment-button paid">PAID</button>';
+                }
+                var amount = penalty.amount ? '￥' + penalty.amount : '未提供';
+                gridItem.innerHTML = '<div class="penalty-info">' +
+                                        '<div><strong>Name:</strong> ' + penalty.name + '</div>' +
+                                        '<div><strong>Reason:</strong> ' + penalty.reason + '</div>' +
+                                        '<div><strong>Amount:</strong> ' + amount + '</div>' +
+                                        '<div><strong>Invoice Number:</strong> ' + penalty.invoiceNumber + '</div>' +
+                                    '</div>' +
+                                    unpaidButton +
+                                    '<button class="edit-button" onclick="editPenalty(' + index + ')">EDIT</button>' +
+                                    '<div class="delete-button" onclick="confirmDelete(' + index + ')">X</div>';
+                gridContainer.appendChild(gridItem);
+            });
+        }
+
+        // 显示添加记录的弹出窗口
+        function showAddForm() {
+            document.getElementById('add-form').style.display = 'block';
+        }
+
+        // 关闭添加记录的弹出窗口
+        function closeAddForm() {
+            document.getElementById('add-form').style.display = 'none';
+        }
+
+        // 添加记录
+        function addRecord() {
+            var name = document.getElementById('add-name').value;
+            var reason = document.getElementById('add-reason').value;
+            var amount = document.getElementById('add-amount').value;
+            var invoiceNumber = document.getElementById('add-invoice-number').value;
+            var newPenalty = { name: name, reason: reason, amount: amount, invoiceNumber: invoiceNumber, paid: false };
+
+            var penalties = JSON.parse(localStorage.getItem('reportData')) || [];
+            penalties.push(newPenalty);
+            localStorage.setItem('reportData', JSON.stringify(penalties));
+            displayPenalties(penalties);
+
+            // 清空表单并关闭窗口
+            document.getElementById('add-name').value = '';
+            document.getElementById('add-reason').value = '';
+            document.getElementById('add-amount').value = '';
+            document.getElementById('add-invoice-number').value = '';
+            closeAddForm();
+        }
+
+        function togglePaymentStatus(button, index) {
+            var penalties = JSON.parse(localStorage.getItem('reportData')) || [];
+            penalties[index].paid = !penalties[index].paid;
+            localStorage.setItem('reportData', JSON.stringify(penalties));
+            displayPenalties(penalties);
+        }
+
+        function saveRecords() {
+            var gridItems = document.querySelectorAll('.grid-item');
+            var penalties = [];
+            gridItems.forEach(function(gridItem) {
+                var penaltyInfo = gridItem.querySelector('.penalty-info');
+                var name = penaltyInfo.querySelector('div:nth-of-type(1)').textContent.split(': ')[1];
+                var reason = penaltyInfo.querySelector('div:nth-of-type(2)').textContent.split(': ')[1];
+                var amount = penaltyInfo.querySelector('div:nth-of-type(3)').textContent.split('￥')[1];
+                var invoiceNumber = penaltyInfo.querySelector('div:nth-of-type(4)').textContent.split(': ')[1];
+                var paid = gridItem.querySelector('.payment-button').classList.contains('paid');
+                penalties.push({ name: name, reason: reason, amount: amount, invoiceNumber: invoiceNumber, paid: paid });
+            });
+            localStorage.setItem('reportData', JSON.stringify(penalties));
+            alert('Record saved!');
+        }
+
+        function confirmDelete(index) {
+            if (confirm('Are you sure you want to delete this record?')) {
+                deleteRecord(index);
+            }
+        }
+
+        function deleteRecord(index) {
+            var penalties = JSON.parse(localStorage.getItem('reportData')) || [];
+            penalties.splice(index, 1);
+            localStorage.setItem('reportData', JSON.stringify(penalties));
+            displayPenalties(penalties);
+        }
+
+        function editPenalty(index) {
+            var gridItems = document.querySelectorAll('.grid-item');
+            var penaltyInfo = gridItems[index].querySelector('.penalty-info');
+            var name = penaltyInfo.querySelector('div:nth-of-type(1)').textContent.split(': ')[1];
+            var reason = penaltyInfo.querySelector('div:nth-of-type(2)').textContent.split(': ')[1];
+            var amount = penaltyInfo.querySelector('div:nth-of-type(3)').textContent.split('￥')[1];
+            var invoiceNumber = penaltyInfo.querySelector('div:nth-of-type(4)').textContent.split(': ')[1];
+            var editForm = document.createElement('div');
+            editForm.innerHTML = '<input type="text" id="edit-name" value="' + name + '">' +
+                                    '<input type="text" id="edit-reason" value="' + reason + '">' +
+                                    '<input type="text" id="edit-amount" value="' + amount + '">' +
+                                    '<input type="text" id="edit-invoice-number" value="' + invoiceNumber + '">' +
+                                    '<button onclick="saveEdit(' + index + ')">SAVE</button>' +
+                                    '<button onclick="cancelEdit(' + index + ')">CANCEL</button>';
+            penaltyInfo.innerHTML = '';
+            penaltyInfo.appendChild(editForm);
+        }
+
+        function saveEdit(index) {
+            var gridItems = document.querySelectorAll('.grid-item');
+            var penalties = JSON.parse(localStorage.getItem('reportData')) || [];
+            var editedPenalty = penalties[index];
+            editedPenalty.name = document.getElementById('edit-name').value;
+            editedPenalty.reason = document.getElementById('edit-reason').value;
+            editedPenalty.amount = document.getElementById('edit-amount').value;
+            editedPenalty.invoiceNumber = document.getElementById('edit-invoice-number').value;
+            penalties[index] = editedPenalty;
+            localStorage.setItem('reportData', JSON.stringify(penalties));
+            displayPenalties(penalties);
+        }
+
+        function cancelEdit(index) {
+            displayPenalties(JSON.parse(localStorage.getItem('reportData')) || []);
+        }
+
+        // 初始化时显示所有记录
+        displayPenalties(JSON.parse(localStorage.getItem('reportData')) || []);
+    </script>
+</body>
+</html>
+    

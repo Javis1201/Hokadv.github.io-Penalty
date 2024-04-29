@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Record</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: calc(50% - 20px);
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        select {
+            width: calc(50% - 20px);
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .submit-button, .delete-button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .submit-button:hover, .delete-button:hover {
+            background-color: #0056b3;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .search-button {
+            background-color: #ccc;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .search-button:hover {
+            background-color: #999;
+        }
+
+        .delete-button {
+            margin-left: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Payment Record</h1>
+
+        <!-- 搜索栏 -->
+        <div class="search-container">
+            <input type="text" id="search-input" class="search-input" placeholder="Search by name">
+            <button class="search-button" onclick="searchByName()">Search</button>
+        </div>
+
+        <!-- 表单 -->
+        <form id="payment-form">
+            <input type="text" id="name" placeholder="Name">
+            <input type="text" id="reason" placeholder="Reason">
+            <input type="number" id="amount" placeholder="Amount">
+            <input type="text" id="invoice-number" placeholder="Invoice Number">
+            <select id="payment-status">
+                <option value="paid">Paid</option>
+                <option value="unpaid">Unpaid</option>
+            </select>
+            <button type="submit" class="submit-button">OK</button>
+            <button type="button" class="delete-button" onclick="deleteRow()">Delete</button>
+        </form>
+
+        <!-- 付款记录表格 -->
+        <table id="payment-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Reason</th>
+                    <th>Amount</th>
+                    <th>Invoice Number</th>
+                    <th>Payment Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 这里将动态生成付款记录 -->
+            </tbody>
+        </table>
+
+        <!-- 保存按钮 -->
+        <button class="submit-button" onclick="saveRecords()">Save</button>
+    </div>
+
+    <script>
+        // 加载页面时显示已保存的记录（如果有）
+        window.onload = function() {
+            var savedRecords = JSON.parse(localStorage.getItem('paymentRecords')) || [];
+            displayRecords(savedRecords);
+        };
+
+        document.getElementById("payment-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+            var name = document.getElementById("name").value;
+            var reason = document.getElementById("reason").value;
+            var amount = document.getElementById("amount").value;
+            var invoiceNumber = document.getElementById("invoice-number").value;
+            var paymentStatus = document.getElementById("payment-status").value;
+
+            // 创建新行
+            var newRow = document.createElement("tr");
+            newRow.innerHTML = "<td>" + name + "</td>" +
+                               "<td>" + reason + "</td>" +
+                               "<td>" + amount + "</td>" +
+                               "<td>" + invoiceNumber + "</td>" +
+                               "<td contenteditable='true'>" + paymentStatus + "</td>" +
+                               "<td><button class='delete-button' onclick='deleteRow(this)'>Delete</button></td>";
+
+            // 将新行添加到表格中
+            document.getElementById("payment-table").getElementsByTagName("tbody")[0].appendChild(newRow);
+        });
+
+        function saveRecords() {
+            var records = [];
+            var tableRows = document.getElementById("payment-table").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+            for (var i = 0; i < tableRows.length; i++) {
+                var cells = tableRows[i].getElementsByTagName("td");
+                var record = {
+                    name: cells[0].innerText,
+                    reason: cells[1].innerText,
+                    amount: cells[2].innerText,
+                    invoiceNumber: cells[3].innerText,
+                    paymentStatus: cells[4].innerText
+                };
+                records.push(record);
+            }
+            localStorage.setItem('paymentRecords', JSON.stringify(records));
+            alert('Records saved!');
+        }
+
+        // 在页面加载时显示保存的记录
+        function displayRecords(records) {
+            var tableBody = document.getElementById("payment-table").getElementsByTagName("tbody")[0];
+            tableBody.innerHTML = "";
+            records.forEach(function(record) {
+                var newRow = document.createElement("tr");
+                newRow.innerHTML = "<td>" + record.name + "</td>" +
+                                   "<td>" + record.reason + "</td>" +
+                                   "<td>" + record.amount + "</td>" +
+                                   "<td>" + record.invoiceNumber + "</td>" +
+                                   "<td contenteditable='true'>" + record.paymentStatus + "</td>" +
+                                   "<td><button class='delete-button' onclick='deleteRow(this)'>Delete</button></td>";
+                tableBody.appendChild(newRow);
+            });
+        }
+
+        // 搜索功能
+        function searchByName() {
+            var searchInput = document.getElementById('search-input').value.toLowerCase();
+            var tableRows = document.getElementById("payment-table").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+            for (var i = 0; i < tableRows.length; i++) {
+                var name = tableRows[i].getElementsByTagName("td")[0].innerText.toLowerCase();
+                if (name.indexOf(searchInput) > -1) {
+                    tableRows[i].style.display = "";
+                } else {
+                    tableRows[i].style.display = "none";
+                }
+            }
+        }
+
+        // 删除行
+        function deleteRow(button) {
+            var row = button.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+        }
+    </script>
+</body>
+</html>
